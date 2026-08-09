@@ -1,0 +1,12 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "appliance-energy-forecasting"
+version = "0.1.0"
+description = "Time-series forecasting pipeline for household appliance energy use."
+requires-python = ">=3.9"
+
+[tool.setuptools.packages.find]
+where = ["src"]
