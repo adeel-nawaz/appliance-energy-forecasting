@@ -9,10 +9,8 @@ data/raw/*.csv
 data/interim/*.csv
 data/processed/*.csv
 
-outputs/figures/*.png
-outputs/forecasts/*.csv
-outputs/metrics/*.csv
 outputs/model_objects/*
+!outputs/model_objects/.gitkeep
 
 *.egg-info/
 .DS_Store
