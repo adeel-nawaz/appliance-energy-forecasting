@@ -1,0 +1,17 @@
+{
+  "order": [
+    2,
+    0,
+    2
+  ],
+  "seasonal_order": [
+    0,
+    1,
+    1,
+    24
+  ],
+  "aic": 32198.343949983584,
+  "bic": 32234.184949767732,
+  "n_train": 2954,
+  "selection": "AIC, two-stage grid search"
+}

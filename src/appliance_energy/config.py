@@ -84,3 +84,40 @@ INDOOR_HUMIDITY_COLS = [f"RH_{i}" for i in range(1, 10)]
 
 SARIMAX_ORDER = (1, 0, 1)
 SARIMAX_SEASONAL_ORDER = (1, 1, 1, DAILY_PERIOD)
+
+# ------------------------------------------------------------------
+# SARIMAX order search
+# ------------------------------------------------------------------
+# The assignment requires looping over every combination of
+# p in [0, 6], d in [0, 2], q in [0, 6]  ->  7 * 3 * 7 = 147 models.
+
+P_RANGE = range(0, 7)
+D_RANGE = range(0, 3)
+Q_RANGE = range(0, 7)
+
+# Stage 2: seasonal grid. D=1 is fixed because the EDA showed a strong, 
+# repeating daily cycle, so one seasonal difference is well justified.
+SEASONAL_P_RANGE = range(0, 2)
+SEASONAL_D_RANGE = range(1, 2)
+SEASONAL_Q_RANGE = range(0, 2)
+
+# How many stage-1 orders to carry into the (expensive) stage-2 search.
+SEASONAL_REFINE_TOP_K = 3
+
+SEASONAL_EXTRA_ORDERS = [(1, 0, 1), (2, 0, 1), (2, 0, 2)]
+
+# The screening grid runs with a low iteration cap so that 147 fits stay
+# affordable, but that leaves complex models short of convergence and
+# their AIC untrustworthy. 
+
+VERIFY_TOP_N = 15
+
+SEARCH_MAXITER = 50
+FINAL_MAXITER = 200
+
+# Cached search results.
+SARIMAX_STAGE1_PATH = METRICS_DIR / "sarimax_grid_search_stage1.csv"
+SARIMAX_STAGE1_VERIFIED_PATH = METRICS_DIR / "sarimax_grid_search_stage1_verified.csv"
+SARIMAX_STAGE2_PATH = METRICS_DIR / "sarimax_grid_search_stage2.csv"
+SARIMAX_BEST_PARAMS_PATH = METRICS_DIR / "sarimax_best_params.json"
+SARIMAX_MODEL_PATH = MODEL_DIR / "sarimax_best.pkl"

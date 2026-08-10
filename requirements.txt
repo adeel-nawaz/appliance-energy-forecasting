@@ -1,8 +1,10 @@
 numpy
 pandas
 matplotlib
+scipy
 scikit-learn
 statsmodels
+joblib
 xgboost
 pytest
 jupyter

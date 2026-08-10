@@ -1,0 +1,2 @@
+n_resid,mean,std,skew,kurtosis,ljung_box_stat,ljung_box_pvalue,residuals_uncorrelated,jarque_bera_stat,jarque_bera_pvalue,residuals_normal
+2903,-0.60159384168128,62.3114991600937,1.8846100082178556,11.188076594814829,49.575322490408055,0.41021979740543485,True,9828.060276360053,0.0,False
