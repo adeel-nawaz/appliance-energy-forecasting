@@ -1,0 +1,28 @@
+{
+  "chosen_groups": [
+    "calendar",
+    "lag"
+  ],
+  "chosen_columns": [
+    "hour",
+    "dayofweek",
+    "is_weekend",
+    "hour_sin",
+    "hour_cos",
+    "dow_sin",
+    "dow_cos",
+    "lag_24",
+    "lag_25",
+    "lag_26",
+    "lag_48",
+    "lag_72",
+    "lag_168"
+  ],
+  "model_family": "random_forest",
+  "validation_scores": {
+    "xgboost": 0.6644911705646717,
+    "histgb": 0.687443877157225,
+    "random_forest": 0.6277673713446175
+  },
+  "selection_metric": "MASE"
+}

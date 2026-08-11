@@ -144,6 +144,107 @@ def plot_residual_diagnostics(resid, lags=48, title="Residual diagnostics"):
     return fig
 
 
+def plot_target_correlations(table, target, top_n=20,
+                              title="Correlation with the target"):
+    """
+    Horizontal bar chart of each feature's correlation with the target,
+    showing the `top_n` strongest by absolute value.
+    """
+
+    correlations = (
+        table.corr(numeric_only=True)[target]
+        .drop(target)
+        .sort_values(key=abs, ascending=False)
+        .head(top_n)
+        .sort_values()
+    )
+
+    colors = ["tab:red" if v < 0 else "tab:blue" for v in correlations]
+
+    fig, ax = plt.subplots(figsize=(9, max(4, 0.32 * len(correlations))))
+    ax.barh(correlations.index, correlations.values, color=colors)
+    ax.axvline(0, color="black", linewidth=1)
+    ax.set_title(title)
+    ax.set_xlabel("Pearson correlation")
+
+    fig.tight_layout()
+
+    return fig, correlations
+
+
+def plot_group_sizes(groups, title="Features by availability group"):
+    """Bar chart of how many features fall into each availability group."""
+
+    names = list(groups)
+    counts = [len(groups[name]) for name in names]
+
+    fig, ax = plt.subplots(figsize=(8, 4))
+    ax.bar(names, counts, color="tab:blue")
+    ax.set_title(title)
+    ax.set_ylabel("Number of features")
+
+    for i, count in enumerate(counts):
+        ax.text(i, count + 0.3, str(count), ha="center")
+
+    fig.tight_layout()
+
+    return fig
+
+
+def plot_feature_importance(importances, top_n=25,
+                             title="Feature importance"):
+    """Horizontal bar chart of the `top_n` most important features."""
+
+    top = importances.sort_values(ascending=False).head(top_n).sort_values()
+
+    fig, ax = plt.subplots(figsize=(9, max(4, 0.32 * len(top))))
+    ax.barh(top.index, top.values, color="tab:blue")
+    ax.set_title(title)
+    ax.set_xlabel("Importance")
+
+    fig.tight_layout()
+
+    return fig
+
+
+def plot_ablation(ablation, metric="MASE", baseline=None,
+                   title="Cumulative feature-group ablation"):
+    """
+    Plot how a metric evolves as feature groups are added.
+
+    Bars are coloured by whether the group would genuinely be known at
+    the forecast origin, so the operational cost of each gain is visible.
+    """
+
+    labels = [f"+{row}" for row in ablation["added_group"]]
+    colors = [
+        "tab:blue" if known else "tab:orange"
+        for known in ablation["known_at_origin"]
+    ]
+
+    fig, ax = plt.subplots(figsize=(9, 4.5))
+    ax.bar(labels, ablation[metric], color=colors)
+
+    handles = [
+        plt.Rectangle((0, 0), 1, 1, color="tab:blue", label="known at forecast origin"),
+        plt.Rectangle((0, 0), 1, 1, color="tab:orange", label="requires realised values"),
+    ]
+
+    if baseline is not None:
+        line = ax.axhline(baseline, color="black", linestyle="--", linewidth=1.5,
+                          label=f"strongest benchmark ({baseline:.3f})")
+        handles.append(line)
+
+    ax.set_title(title)
+    ax.set_ylabel(metric)
+    ax.set_xlabel("Feature groups added (cumulative)")
+    ax.legend(handles=handles, fontsize=8)
+
+    fig.tight_layout()
+
+    return fig
+
+
 def save_fig(fig, path, dpi=300):
     """Save a figure to `path`, creating parent directories as needed."""
 

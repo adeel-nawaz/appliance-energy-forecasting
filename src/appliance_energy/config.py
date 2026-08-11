@@ -69,6 +69,11 @@ HORIZON = 24
 # Recommended test period: final 14 days, on hourly data.
 TEST_STEPS = 14 * 24
 
+# Validation block sitting immediately before the test period, used to
+# choose feature sets and hyper-parameters. Selecting on the test set is
+# listed as data leakage in the brief, so model choices are made here.
+VALID_STEPS = 14 * 24
+
 # Candidate exogenous / covariate columns available in the raw dataset.
 CANDIDATE_EXOG_COLS = [
     "T_out",
@@ -84,6 +89,33 @@ INDOOR_HUMIDITY_COLS = [f"RH_{i}" for i in range(1, 10)]
 
 SARIMAX_ORDER = (1, 0, 1)
 SARIMAX_SEASONAL_ORDER = (1, 1, 1, DAILY_PERIOD)
+
+# ------------------------------------------------------------------
+# Feature engineering
+# ------------------------------------------------------------------
+# Every lag is >= HORIZON. At a 24-hour horizon, a feature for the row
+# at time t may only use target values from t - 24 or earlier: shorter
+# lags refer to observations that have not been made yet at the forecast
+# origin. See appliance_energy.features for the full explanation.
+LAG_FEATURES = [24, 25, 26, 48, 72, 168]
+
+# Rolling windows are applied after shifting the target by HORIZON, so
+# these describe how far back the window extends beyond that shift.
+ROLLING_WINDOWS = [24, 48, 168]
+
+FEATURE_TABLE_PATH = PROCESSED_DIR / "feature_table.csv"
+
+# ------------------------------------------------------------------
+# Feature-based model
+# ------------------------------------------------------------------
+FEATURE_MODEL_CANDIDATES = ["xgboost", "histgb", "random_forest"]
+
+FEATURE_MODEL_PATH = MODEL_DIR / "feature_model.pkl"
+FOUNDATION_MODEL_NAME = "amazon/chronos-bolt-small"
+FOUNDATION_FORECAST_PATH = FORECAST_DIR / "foundation_forecast.csv"
+FEATURE_MODEL_SELECTION_PATH = METRICS_DIR / "feature_model_selection.json"
+FEATURE_ABLATION_PATH = METRICS_DIR / "feature_group_ablation.csv"
+FEATURE_IMPORTANCE_PATH = METRICS_DIR / "feature_importance.csv"
 
 # ------------------------------------------------------------------
 # SARIMAX order search

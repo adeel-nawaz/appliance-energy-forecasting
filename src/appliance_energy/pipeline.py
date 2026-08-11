@@ -17,8 +17,8 @@ feature-based and foundation models are wired in at later stages.
 
 import pandas as pd
 
-from appliance_energy import backtest, config, data, evaluation, plotting
-from appliance_energy.models import benchmarks, sarimax
+from appliance_energy import backtest, config, data, evaluation, features, plotting
+from appliance_energy.models import benchmarks, feature_models, foundation, sarimax
 
 
 def build_benchmark_forecasts(train, test, horizon=config.HORIZON):
@@ -74,6 +74,76 @@ def build_sarimax_forecast(train, test, horizon=config.HORIZON, use_cached=True)
     return forecast_df, fit
 
 
+def build_feature_model_forecast(hourly, train, horizon=config.HORIZON):
+    """
+    Feature-based forecast.
+
+    Feature groups and model family are both chosen on a validation
+    block that sits before the test period, so the test set plays no
+    part in model selection. Every lag and rolling feature respects the
+    forecast horizon, so each prediction is a genuine 24-step-ahead
+    forecast and the test block can be scored in one pass.
+    """
+
+    table = features.build_feature_table(hourly, horizon=horizon)
+
+    def evaluate_fn(y_true, y_pred):
+        return evaluation.evaluate_forecast("candidate", y_true, y_pred, train)
+
+    model, selection, ablation, split = feature_models.select_and_fit(
+        table, evaluate_fn, test_steps=config.TEST_STEPS,
+        valid_steps=config.VALID_STEPS,
+    )
+
+    predictions = feature_models.predict_feature_model(
+        model, split["X_test"], index=split["y_test"].index, name="feature_model"
+    )
+
+    feature_models.save_model(model)
+    feature_models.save_selection(selection)
+    ablation.to_csv(config.FEATURE_ABLATION_PATH, index=False)
+
+    importance = feature_models.get_feature_importance(
+        model, list(split["X_test"].columns))
+
+    if importance is not None:
+        importance.to_csv(config.FEATURE_IMPORTANCE_PATH, header=["importance"])
+
+        fig = plotting.plot_feature_importance(
+            importance, title=f"Feature importance ({selection['model_family']})")
+        plotting.save_fig(fig, config.FIGURE_DIR / "feature_importance.png")
+
+    return predictions, model, selection
+
+
+def build_foundation_forecast(train, test, horizon=config.HORIZON,
+                              model_name=config.FOUNDATION_MODEL_NAME):
+    """
+    Zero-shot foundation-model forecast (Chronos).
+
+    The model is used exactly as pretrained: no fitting or fine-tuning on
+    the appliance data, and no covariates -- Chronos is univariate, so it
+    sees only the target history. Rolling origins match the other models.
+
+    Returns None if Chronos is unavailable, so the rest of the pipeline
+    still runs on a machine without torch.
+    """
+
+    try:
+        pipeline_obj = foundation.load_chronos(model_name)
+    except foundation.ChronosUnavailable as exc:
+        print(f"Skipping foundation model: {exc}")
+        return None
+
+    forecast_df = foundation.rolling_forecast_chronos(
+        pipeline_obj, train, test, horizon=horizon
+    )
+
+    forecast_df.to_csv(config.FOUNDATION_FORECAST_PATH)
+
+    return forecast_df
+
+
 def run_pipeline(horizon=config.HORIZON, use_cached_sarimax=True):
     config.ensure_dirs()
 
@@ -94,8 +164,15 @@ def run_pipeline(horizon=config.HORIZON, use_cached_sarimax=True):
     )
     forecasts["sarimax"] = sarimax_df["sarimax"]
 
-    # TODO (next stage): feature-based model, via models.feature_models
-    # TODO (next stage): foundation model, via models.foundation
+    print("\nFeature-based model:")
+    feature_pred, _, _ = build_feature_model_forecast(hourly, train, horizon=horizon)
+    forecasts["feature_model"] = feature_pred
+
+    print("\nFoundation model (Chronos, zero-shot):")
+    foundation_df = build_foundation_forecast(train, test, horizon=horizon)
+
+    if foundation_df is not None:
+        forecasts["foundation_model"] = foundation_df["foundation_model"]
 
     results_df = evaluation.evaluate_all(
         forecasts, test, train, seasonality=config.DAILY_PERIOD

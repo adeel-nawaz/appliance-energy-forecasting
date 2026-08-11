@@ -9,3 +9,8 @@ xgboost
 pytest
 jupyter
 nbformat
+
+# torch is CPU-only here; install with
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+torch
+chronos-forecasting
