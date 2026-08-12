@@ -245,6 +245,106 @@ def plot_ablation(ablation, metric="MASE", baseline=None,
     return fig
 
 
+def plot_error_diagnostics(errors, hourly_errors, step_errors, summary,
+                            title="Forecast error diagnostics"):
+    """
+    Four-panel error diagnostic across models.
+
+    Panel 1: absolute error by hour of day -- when do models fail?
+    Panel 2: absolute error by step ahead  -- how does error grow with distance?
+    Panel 3: signed error distributions    -- is the model biased?
+    Panel 4: error percentiles             -- typical vs worst-case behaviour.
+    """
+
+    fig, axes = plt.subplots(2, 2, figsize=(15, 10))
+
+    hourly_errors.plot(ax=axes[0, 0], marker="o", linewidth=1.5)
+    axes[0, 0].set_title("Mean absolute error by hour of day")
+    axes[0, 0].set_xlabel("Hour")
+    axes[0, 0].set_ylabel("MAE (Wh)")
+    axes[0, 0].legend(fontsize=7)
+
+    step_errors.plot(ax=axes[0, 1], marker="o", linewidth=1.5)
+    axes[0, 1].set_title("Mean absolute error by steps ahead of origin")
+    axes[0, 1].set_xlabel("Steps ahead")
+    axes[0, 1].set_ylabel("MAE (Wh)")
+    axes[0, 1].legend(fontsize=7)
+
+    axes[1, 0].boxplot(
+        [errors[col].dropna() for col in errors.columns],
+        labels=list(errors.columns),
+        showfliers=False,
+    )
+    axes[1, 0].axhline(0, color="black", linestyle="--", linewidth=1)
+    axes[1, 0].set_title("Signed error distribution (forecast - actual)")
+    axes[1, 0].set_ylabel("Error (Wh)")
+    axes[1, 0].tick_params(axis="x", rotation=45, labelsize=7)
+
+    summary[["median", "p90", "p95"]].plot(kind="bar", ax=axes[1, 1])
+    axes[1, 1].set_title("Absolute error percentiles")
+    axes[1, 1].set_ylabel("Absolute error (Wh)")
+    axes[1, 1].tick_params(axis="x", rotation=45, labelsize=7)
+    axes[1, 1].legend(fontsize=8)
+
+    fig.suptitle(title, fontsize=13)
+    fig.tight_layout()
+
+    return fig
+
+
+def plot_metric_comparison(results, baseline_mase=None,
+                            metrics=("MAE", "RMSE", "MASE"),
+                            title="Model comparison"):
+    """Grouped bar chart of each metric across models, sorted by MASE."""
+
+    ordered = results.sort_values("MASE")
+
+    fig, axes = plt.subplots(1, len(metrics), figsize=(5 * len(metrics), 4.5))
+
+    if len(metrics) == 1:
+        axes = [axes]
+
+    for ax, metric in zip(axes, metrics):
+        colors = ["tab:green" if m == ordered["MASE"].min() else "tab:blue"
+                  for m in ordered["MASE"]]
+        ax.barh(ordered["model"], ordered[metric], color=colors)
+        ax.invert_yaxis()
+        ax.set_title(metric)
+        ax.tick_params(axis="y", labelsize=8)
+
+        if metric == "MASE":
+            ax.axvline(1.0, color="red", linestyle="--", linewidth=1.2,
+                       label="MASE = 1")
+            if baseline_mase is not None:
+                ax.axvline(baseline_mase, color="black", linestyle=":",
+                           linewidth=1.2, label="strongest benchmark")
+            ax.legend(fontsize=7)
+
+    fig.suptitle(title, fontsize=13)
+    fig.tight_layout()
+
+    return fig
+
+
+def plot_skill_scores(skill, metric="MASE_improvement_%",
+                       title="Improvement over the strongest benchmark"):
+    """Bar chart of percentage improvement over a baseline, signed."""
+
+    ordered = skill.sort_values(metric)
+    colors = ["tab:green" if v > 0 else "tab:red" for v in ordered[metric]]
+
+    fig, ax = plt.subplots(figsize=(9, 4.5))
+    ax.barh(ordered["model"], ordered[metric], color=colors)
+    ax.axvline(0, color="black", linewidth=1.2)
+    ax.set_title(title)
+    ax.set_xlabel("% improvement (positive = better than benchmark)")
+    ax.tick_params(axis="y", labelsize=8)
+
+    fig.tight_layout()
+
+    return fig
+
+
 def save_fig(fig, path, dpi=300):
     """Save a figure to `path`, creating parent directories as needed."""
 

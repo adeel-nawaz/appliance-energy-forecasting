@@ -20,9 +20,9 @@
   ],
   "model_family": "random_forest",
   "validation_scores": {
+    "random_forest": 0.6277673713446174,
     "xgboost": 0.6644911705646717,
-    "histgb": 0.687443877157225,
-    "random_forest": 0.6277673713446175
+    "histgb": 0.687443877157225
   },
   "selection_metric": "MASE"
 }
