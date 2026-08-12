@@ -4,10 +4,9 @@ A reproducible pipeline for forecasting household appliance energy use 24 hours 
 benchmark forecasts, SARIMAX, a feature-based regression model, and a pretrained time-series
 foundation model on identical test data.
 
-Data: the **Appliances Energy Prediction** dataset (Candanedo, Feijóo and Deramaix, 2017,
-*Energy and Buildings* 140, pp. 81–97) — 19,735 observations at 10-minute resolution from a
-low-energy house in Belgium, January to May 2016, with indoor sensors, outdoor weather and a
-lighting meter alongside the target.
+Data: the **Appliances Energy Prediction** dataset, downloaded directly from the link: https://archive.ics.uci.edu/ml/machine-learning-databases/00374/energydata_complete.csv
+— 19,735 observations at 10-minute resolution from a low-energy house in Belgium, January to May
+2016, with indoor sensors, outdoor weather and a lighting meter alongside the target.
 
 ## Headline results
 
